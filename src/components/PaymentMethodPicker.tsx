@@ -104,51 +104,55 @@ export default function PaymentMethodPicker({
         </View>
       )}
 
-      {/* Toujours afficher toutes les options de paiement */}
-      <Text style={styles.label}>Mode de paiement</Text>
-      <View style={styles.optionsContainer}>
-        {options.map((option) => {
-          const isSelected = selected === option.id;
-          // Afficher le montant complément pour les options mobile si crédit partiel
-          const showComplement = needsComplement && (option.id === 'orange_money' || option.id === 'wave');
+      {/* Afficher les options mobile money seulement si crédit insuffisant */}
+      {!creditCoversAll && (
+        <>
+          <Text style={styles.label}>Mode de paiement</Text>
+          <View style={styles.optionsContainer}>
+            {options.map((option) => {
+              const isSelected = selected === option.id;
+              // Afficher le montant complément pour les options mobile si crédit partiel
+              const showComplement = needsComplement && (option.id === 'orange_money' || option.id === 'wave');
 
-          return (
-            <TouchableOpacity
-              key={option.id}
-              style={[
-                styles.option,
-                isSelected && styles.optionSelected,
-                isSelected && { borderColor: option.color },
-              ]}
-              onPress={() => onSelect(option.id)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.optionHeader}>
-                <View style={styles.optionIcon}>
-                  <PaymentIcon option={option} />
-                </View>
-                <Text
+              return (
+                <TouchableOpacity
+                  key={option.id}
                   style={[
-                    styles.optionName,
-                    isSelected && { color: option.color },
+                    styles.option,
+                    isSelected && styles.optionSelected,
+                    isSelected && { borderColor: option.color },
                   ]}
+                  onPress={() => onSelect(option.id)}
+                  activeOpacity={0.7}
                 >
-                  {option.name}
-                </Text>
-                {showComplement && (
-                  <Text style={styles.complementAmount}>{formatPrice(complementAmount)}</Text>
-                )}
-                {isSelected && (
-                  <View style={[styles.checkmark, { backgroundColor: option.color }]}>
-                    <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                  <View style={styles.optionHeader}>
+                    <View style={styles.optionIcon}>
+                      <PaymentIcon option={option} />
+                    </View>
+                    <Text
+                      style={[
+                        styles.optionName,
+                        isSelected && { color: option.color },
+                      ]}
+                    >
+                      {option.name}
+                    </Text>
+                    {showComplement && (
+                      <Text style={styles.complementAmount}>{formatPrice(complementAmount)}</Text>
+                    )}
+                    {isSelected && (
+                      <View style={[styles.checkmark, { backgroundColor: option.color }]}>
+                        <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                      </View>
+                    )}
                   </View>
-                )}
-              </View>
-              <Text style={styles.optionDescription}>{option.description}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+                  <Text style={styles.optionDescription}>{option.description}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </>
+      )}
 
       {/* Avertissement mock */}
       <View style={styles.mockWarning}>

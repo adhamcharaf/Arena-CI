@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Modal,
   TouchableOpacity,
-  TouchableWithoutFeedback,
+  Pressable,
   ActivityIndicator,
   ScrollView,
   Dimensions,
@@ -74,6 +74,15 @@ export default function BookingDetailModal({
   const [selectedMobileMethod, setSelectedMobileMethod] = useState<MobilePaymentMethod | null>(null);
   const [showPaymentPicker, setShowPaymentPicker] = useState(false);
 
+  // Reset state quand le modal s'ouvre ou quand la réservation change
+  useEffect(() => {
+    if (visible) {
+      setShowPaymentPicker(false);
+      setSelectedPaymentMethod(null);
+      setSelectedMobileMethod(null);
+    }
+  }, [visible, booking?.id]);
+
   if (!booking) return null;
 
   const statusConfig = getStatusConfig(booking.status);
@@ -85,14 +94,8 @@ export default function BookingDetailModal({
   const useCredit = creditBalance > 0;
 
   const handlePayPress = () => {
-    // Si le crédit couvre tout, on peut payer directement
-    if (creditCoversAll) {
-      onPay(booking, 'credit', true, undefined);
-    } else if (selectedPaymentMethod) {
-      onPay(booking, selectedPaymentMethod, useCredit, selectedMobileMethod || undefined);
-    } else {
-      setShowPaymentPicker(true);
-    }
+    // Toujours afficher le picker pour montrer le solde et confirmer
+    setShowPaymentPicker(true);
   };
 
   const handlePaymentMethodSelect = (method: PaymentMethod) => {
@@ -118,10 +121,9 @@ export default function BookingDetailModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <View style={styles.modalContent}>
+      <View style={styles.overlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.modalContent}>
               {/* Close button */}
               <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                 <Ionicons name="close" size={24} color="#6B7280" />
@@ -272,9 +274,9 @@ export default function BookingDetailModal({
                       </TouchableOpacity>
                     ) : (
                       <TouchableOpacity
-                        style={[styles.payButton, !selectedPaymentMethod && styles.payButtonDisabled]}
+                        style={[styles.payButton, (!selectedPaymentMethod && !creditCoversAll) && styles.payButtonDisabled]}
                         onPress={handleConfirmPay}
-                        disabled={isPaying || !selectedPaymentMethod}
+                        disabled={isPaying || (!selectedPaymentMethod && !creditCoversAll)}
                       >
                         {isPaying ? (
                           <ActivityIndicator color="#FFFFFF" />
@@ -308,9 +310,7 @@ export default function BookingDetailModal({
                 )}
               </View>
             </View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
+          </View>
     </Modal>
   );
 }
