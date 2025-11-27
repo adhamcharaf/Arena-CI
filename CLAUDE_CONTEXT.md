@@ -521,7 +521,7 @@ Si un creneau est `unpaid` par un autre utilisateur ET que `is_paying=true`:
 - [x] Reservation sans paiement (cash)
 
 ### Ecran Bookings (Mes Reservations)
-- [x] Liste toutes les reservations
+- [x] Liste toutes les reservations (sans boutons de reservation - uniquement consultation)
 - [x] Tri par date decroissante
 - [x] Badge statut colore
 - [x] Modal detail reservation
@@ -533,6 +533,7 @@ Si un creneau est `unpaid` par un autre utilisateur ET que `is_paying=true`:
 - [x] Options mobile money masquees si credit couvre 100%
 - [x] Reset etat modal a chaque ouverture
 - [x] Scroll modal corrige (Pressable absoluteFill)
+- [x] Onglet navbar renomme "Mes reservations"
 
 ### Ecran Profile
 - [x] Affichage infos utilisateur
@@ -675,6 +676,7 @@ npx tsc --noEmit        # Verifier types TypeScript
 | 2025-11-27 | Filtrage creneaux passes base sur date+heure (empeche annulation) | - |
 | 2025-11-27 | UX paiement amelioree: confirmation avant credit, scroll modal corrige | - |
 | 2025-11-27 | Refonte page accueil: activites, espace detente, galerie, formulaire evenements, contact | - |
+| 2025-11-27 | Simplifier BookingsScreen (supprimer boutons reservation), renommer onglet "Mes reservations" | - |
 
 ---
 
