@@ -17,9 +17,8 @@ import { useBookingStore } from '../stores/bookingStore';
 import { formatDate, formatTime, formatPrice } from '../utils/dateHelpers';
 import { colors, spacing, borderRadius, textStyles } from '../theme';
 import haptics from '../utils/haptics';
-import CourtCard from '../components/CourtCard';
 import BookingDetailModal from '../components/BookingDetailModal';
-import { Court, Booking, BookingStatus, PaymentMethod, MobilePaymentMethod, getInitials } from '../types';
+import { Booking, BookingStatus, PaymentMethod, MobilePaymentMethod, getInitials } from '../types';
 
 type BookingsScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -52,13 +51,9 @@ export default function BookingsScreen({ navigation }: BookingsScreenProps) {
   const {
     userBookings,
     fetchUserBookings,
-    courts,
-    fetchCourts,
-    selectCourt,
     cancelBooking,
     payExistingBooking,
     checkUserCanBook,
-    pendingFines,
     pendingFinesTotal,
     isLoading,
     userCreditsBalance,
@@ -71,7 +66,6 @@ export default function BookingsScreen({ navigation }: BookingsScreenProps) {
   const [isPaying, setIsPaying] = useState(false);
 
   useEffect(() => {
-    fetchCourts();
     if (user?.id) {
       fetchUserBookings(user.id);
       checkUserCanBook();
@@ -79,16 +73,11 @@ export default function BookingsScreen({ navigation }: BookingsScreenProps) {
     }
   }, [user?.id]);
 
-  const handleCourtPress = (court: Court) => {
-    selectCourt(court);
-    navigation.navigate('Booking');
-  };
-
   const handleRefresh = () => {
-    fetchCourts();
     if (user?.id) {
       fetchUserBookings(user.id);
       checkUserCanBook();
+      fetchUserCredits();
     }
   };
 
@@ -234,18 +223,6 @@ export default function BookingsScreen({ navigation }: BookingsScreenProps) {
           </View>
         )}
 
-        {/* Section Réserver un terrain */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Réserver un terrain</Text>
-          {courts.map((court) => (
-            <CourtCard
-              key={court.id}
-              court={court}
-              onPress={() => handleCourtPress(court)}
-            />
-          ))}
-        </View>
-
         {/* Réservations à venir */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
@@ -258,7 +235,7 @@ export default function BookingsScreen({ navigation }: BookingsScreenProps) {
             <View style={styles.emptyState}>
               <Ionicons name="calendar-outline" size={48} color="#D1D5DB" />
               <Text style={styles.emptyText}>Aucune réservation à venir</Text>
-              <Text style={styles.emptySubtext}>Choisissez un terrain ci-dessus pour réserver</Text>
+              <Text style={styles.emptySubtext}>Réservez depuis l'accueil</Text>
             </View>
           ) : (
             upcomingBookings.map((booking) => {

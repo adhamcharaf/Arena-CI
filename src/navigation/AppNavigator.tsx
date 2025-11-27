@@ -154,7 +154,7 @@ function MainTabs() {
         name="BookingsTab"
         component={BookingsStack}
         options={{
-          tabBarLabel: 'Réservations',
+          tabBarLabel: 'Mes réservations',
           tabBarIcon: ({ focused }) => <TabIcon name="bookings" focused={focused} />,
         }}
       />

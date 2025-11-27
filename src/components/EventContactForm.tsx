@@ -377,11 +377,11 @@ const styles = StyleSheet.create({
   // Form
   formContainer: {
     backgroundColor: colors.background.primary,
-    padding: spacing.xl,
-    paddingTop: spacing['2xl'],
+    padding: spacing.lg,
+    paddingTop: spacing.xl,
   },
   fieldGroup: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   label: {
     ...textStyles.label,
@@ -426,28 +426,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.default,
     overflow: 'hidden',
+    height: 48,
+    maxHeight: 48,
   },
   inputIcon: {
-    marginLeft: spacing.lg,
+    marginLeft: spacing.md,
   },
   input: {
     flex: 1,
-    paddingVertical: spacing.lg,
+    height: 46,
     paddingHorizontal: spacing.md,
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: textStyles.body.fontFamily,
     color: colors.text.primary,
   },
   phonePrefix: {
-    paddingLeft: spacing.lg,
-    paddingRight: spacing.sm,
+    paddingHorizontal: spacing.md,
     borderRightWidth: 1,
     borderRightColor: colors.border.default,
-    height: '100%',
+    height: 46,
     justifyContent: 'center',
   },
   phonePrefixText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: colors.text.secondary,
   },
@@ -455,11 +456,14 @@ const styles = StyleSheet.create({
     paddingLeft: spacing.md,
   },
   textAreaContainer: {
+    height: 120,
+    maxHeight: 120,
     alignItems: 'flex-start',
   },
   textArea: {
-    minHeight: 100,
-    paddingTop: spacing.md,
+    height: 118,
+    paddingTop: spacing.sm,
+    textAlignVertical: 'top',
   },
   // Error
   errorContainer: {
