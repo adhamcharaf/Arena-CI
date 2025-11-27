@@ -496,6 +496,10 @@ Si un creneau est `unpaid` par un autre utilisateur ET que `is_paying=true`:
 - [x] Annuler reservation
 - [x] Affichage solde credits et bouton profil dans header
 - [x] Filtrage "a venir" vs "passe" base sur date + heure du creneau
+- [x] UX paiement: affichage solde credit + confirmation avant paiement
+- [x] Options mobile money masquees si credit couvre 100%
+- [x] Reset etat modal a chaque ouverture
+- [x] Scroll modal corrige (Pressable absoluteFill)
 
 ### Ecran Profile
 - [x] Affichage infos utilisateur
@@ -636,6 +640,7 @@ npx tsc --noEmit        # Verifier types TypeScript
 | 2025-11-27 | Documentation initiale creee | - |
 | 2025-11-27 | Solde credits toujours visible + badge credit et profil sur Booking/Bookings | - |
 | 2025-11-27 | Filtrage creneaux passes base sur date+heure (empeche annulation) | - |
+| 2025-11-27 | UX paiement amelioree: confirmation avant credit, scroll modal corrige | - |
 
 ---
 
