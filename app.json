@@ -27,7 +27,20 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store"
-    ]
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#F97316",
+          "defaultChannel": "default"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "98efd52b-a796-4f30-84fd-5063815d2ee5"
+      }
+    },
+    "owner": "adhamcharaf"
   }
 }

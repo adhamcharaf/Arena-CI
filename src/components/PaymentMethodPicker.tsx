@@ -6,11 +6,18 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { PaymentMethod } from '../types';
+import { PaymentMethod, MobilePaymentMethod } from '../types';
+import { formatPrice } from '../utils/dateHelpers';
 
 interface PaymentMethodPickerProps {
   selected: PaymentMethod | null;
   onSelect: (method: PaymentMethod) => void;
+  excludeCash?: boolean;
+  // Nouveaux props pour le crédit
+  creditBalance?: number;
+  totalAmount?: number;
+  onMobileMethodSelect?: (method: MobilePaymentMethod) => void;
+  selectedMobileMethod?: MobilePaymentMethod | null;
 }
 
 interface PaymentOption {
@@ -59,14 +66,51 @@ const PaymentIcon = ({ option }: { option: PaymentOption }) => {
 export default function PaymentMethodPicker({
   selected,
   onSelect,
+  excludeCash = false,
+  creditBalance = 0,
+  totalAmount = 0,
+  onMobileMethodSelect,
+  selectedMobileMethod,
 }: PaymentMethodPickerProps) {
+  const hasCredit = creditBalance > 0;
+  const creditCoversAll = hasCredit && creditBalance >= totalAmount;
+  const needsComplement = hasCredit && !creditCoversAll;
+  const complementAmount = needsComplement ? totalAmount - creditBalance : 0;
+
+  // Filter options based on context
+  const options = excludeCash
+    ? PAYMENT_OPTIONS.filter(opt => opt.id !== 'cash')
+    : PAYMENT_OPTIONS;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Mode de paiement</Text>
+      {/* Bandeau crédit si solde > 0 */}
+      {hasCredit && (
+        <View style={styles.creditBanner}>
+          <View style={styles.creditHeader}>
+            <Ionicons name="wallet" size={20} color="#10B981" />
+            <Text style={styles.creditTitle}>Crédit disponible</Text>
+          </View>
+          <Text style={styles.creditAmount}>{formatPrice(creditBalance)}</Text>
+          {creditCoversAll ? (
+            <Text style={styles.creditInfo}>
+              Couvre la totalité du paiement
+            </Text>
+          ) : (
+            <Text style={styles.creditInfo}>
+              Sera utilisé automatiquement. Reste à payer : {formatPrice(complementAmount)}
+            </Text>
+          )}
+        </View>
+      )}
 
+      {/* Toujours afficher toutes les options de paiement */}
+      <Text style={styles.label}>Mode de paiement</Text>
       <View style={styles.optionsContainer}>
-        {PAYMENT_OPTIONS.map((option) => {
+        {options.map((option) => {
           const isSelected = selected === option.id;
+          // Afficher le montant complément pour les options mobile si crédit partiel
+          const showComplement = needsComplement && (option.id === 'orange_money' || option.id === 'wave');
 
           return (
             <TouchableOpacity
@@ -91,6 +135,9 @@ export default function PaymentMethodPicker({
                 >
                   {option.name}
                 </Text>
+                {showComplement && (
+                  <Text style={styles.complementAmount}>{formatPrice(complementAmount)}</Text>
+                )}
                 {isSelected && (
                   <View style={[styles.checkmark, { backgroundColor: option.color }]}>
                     <Ionicons name="checkmark" size={14} color="#FFFFFF" />
@@ -117,6 +164,70 @@ export default function PaymentMethodPicker({
 const styles = StyleSheet.create({
   container: {
     marginVertical: 16,
+  },
+  // Styles pour le bandeau crédit
+  creditBanner: {
+    backgroundColor: '#ECFDF5',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  creditHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  creditTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#065F46',
+    marginLeft: 8,
+  },
+  creditAmount: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#10B981',
+    marginBottom: 4,
+  },
+  creditInfo: {
+    fontSize: 13,
+    color: '#047857',
+  },
+  // Styles pour crédit couvrant tout
+  creditOnlySection: {
+    marginBottom: 8,
+  },
+  creditOnlyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    padding: 16,
+    gap: 12,
+  },
+  creditOnlyButtonSelected: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#10B981',
+  },
+  creditOnlyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  creditOnlyTextSelected: {
+    color: '#065F46',
+  },
+  // Styles pour complément
+  complementAmount: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#F97316',
+    marginLeft: 'auto',
+    marginRight: 8,
   },
   label: {
     fontSize: 16,

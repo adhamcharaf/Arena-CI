@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { User } from '../types';
 import { supabase } from '../config/supabase';
+import { notificationService } from '../services/notificationService';
 
 // Storage adapter pour Zustand
 const zustandStorage = {
@@ -148,6 +149,11 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: true,
               isLoading: false,
             });
+
+            // Initialize push notifications and save token
+            notificationService.initialize().then(() => {
+              notificationService.savePushTokenToProfile();
+            });
           }
 
           return { success: true };
@@ -162,6 +168,8 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
 
         try {
+          // Remove push token from profile before signing out
+          await notificationService.removePushTokenFromProfile();
           await supabase.auth.signOut();
         } catch (error) {
           console.error('Sign out error:', error);
@@ -188,6 +196,12 @@ export const useAuthStore = create<AuthState>()(
 
             if (profile) {
               set({ user: profile, isAuthenticated: true });
+
+              // Initialize push notifications for returning users
+              notificationService.initialize().then(() => {
+                notificationService.savePushTokenToProfile();
+              });
+
               return true;
             }
           }

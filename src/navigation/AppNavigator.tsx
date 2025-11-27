@@ -27,6 +27,8 @@ export type RootStackParamList = {
   CompleteProfile: undefined;
   // Home Stack
   Home: undefined;
+  // Bookings Stack
+  BookingsList: undefined;
   Booking: undefined;
   Confirmation: undefined;
 };
@@ -79,11 +81,30 @@ function OnboardingStack() {
   );
 }
 
-// Stack pour l'onglet Accueil (Home -> Booking -> Confirmation)
+// Stack pour l'onglet Accueil (vitrine + flux réservation)
 function HomeStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen
+        name="Booking"
+        component={BookingScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="Confirmation"
+        component={ConfirmationScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+// Stack pour l'onglet Réservations (BookingsList -> Booking -> Confirmation)
+function BookingsStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="BookingsList" component={BookingsScreen} />
       <Stack.Screen
         name="Booking"
         component={BookingScreen}
@@ -131,7 +152,7 @@ function MainTabs() {
       />
       <Tab.Screen
         name="BookingsTab"
-        component={BookingsScreen}
+        component={BookingsStack}
         options={{
           tabBarLabel: 'Réservations',
           tabBarIcon: ({ focused }) => <TabIcon name="bookings" focused={focused} />,

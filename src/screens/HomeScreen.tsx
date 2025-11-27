@@ -4,17 +4,16 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
-  ActivityIndicator,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import CourtCard from '../components/CourtCard';
 import { useBookingStore } from '../stores/bookingStore';
 import { useAuthStore } from '../stores/authStore';
 import { getInitials } from '../types';
+import { formatPrice } from '../utils/dateHelpers';
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -22,19 +21,33 @@ type HomeScreenProps = {
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { user } = useAuthStore();
-  const { courts, fetchCourts, selectCourt, isLoading, error } = useBookingStore();
+  const { courts, fetchCourts, selectCourt, isLoading, userCreditsBalance, fetchUserCredits } = useBookingStore();
 
   useEffect(() => {
     fetchCourts();
+    fetchUserCredits();
   }, []);
-
-  const handleCourtPress = (court: typeof courts[0]) => {
-    selectCourt(court);
-    navigation.navigate('Booking');
-  };
 
   const handleRefresh = () => {
     fetchCourts();
+    fetchUserCredits();
+  };
+
+  const footballCourt = courts.find(c => c.type === 'football');
+  const padelCourt = courts.find(c => c.type === 'padel');
+
+  const handleFootballPress = () => {
+    if (footballCourt) {
+      selectCourt(footballCourt);
+      navigation.navigate('Booking');
+    }
+  };
+
+  const handlePadelPress = () => {
+    if (padelCourt) {
+      selectCourt(padelCourt);
+      navigation.navigate('Booking');
+    }
   };
 
   return (
@@ -48,18 +61,26 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             </Text>
             <MaterialCommunityIcons name="hand-wave" size={16} color="#F97316" style={styles.waveIcon} />
           </View>
-          <Text style={styles.headerTitle}>Réservez votre terrain</Text>
+          <Text style={styles.headerTitle}>Bienvenue</Text>
         </View>
 
-        {/* Profile button */}
-        <TouchableOpacity
-          style={styles.profileButton}
-          onPress={() => navigation.getParent()?.navigate('ProfileTab')}
-        >
-          <Text style={styles.profileButtonText}>
-            {getInitials(user)}
-          </Text>
-        </TouchableOpacity>
+        {/* Credit badge + Profile button */}
+        <View style={styles.headerRight}>
+          {userCreditsBalance > 0 && (
+            <View style={styles.creditBadge}>
+              <Ionicons name="wallet-outline" size={14} color="#10B981" />
+              <Text style={styles.creditBadgeText}>{formatPrice(userCreditsBalance)}</Text>
+            </View>
+          )}
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={() => navigation.getParent()?.navigate('ProfileTab')}
+          >
+            <Text style={styles.profileButtonText}>
+              {getInitials(user)}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Content */}
@@ -76,54 +97,109 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           />
         }
       >
-        {/* Info banner */}
-        <View style={styles.infoBanner}>
-          <View style={styles.infoIconContainer}>
-            <MaterialCommunityIcons name="stadium-variant" size={28} color="#F97316" />
+        {/* Hero Banner */}
+        <View style={styles.heroBanner}>
+          <View style={styles.heroIconContainer}>
+            <MaterialCommunityIcons name="stadium-variant" size={48} color="#F97316" />
           </View>
-          <View style={styles.infoContent}>
-            <Text style={styles.infoTitle}>Arena Grand-Bassam</Text>
-            <Text style={styles.infoText}>Ouvert 24h/24 • Football & Padel</Text>
+          <Text style={styles.heroTitle}>ARENA GRAND-BASSAM</Text>
+          <Text style={styles.heroSubtitle}>Votre complexe sportif</Text>
+
+          <View style={styles.heroFeatures}>
+            <View style={styles.heroFeature}>
+              <Ionicons name="time-outline" size={16} color="#10B981" />
+              <Text style={styles.heroFeatureText}>Ouvert 24h/24</Text>
+            </View>
+            <View style={styles.heroFeatureDot} />
+            <View style={styles.heroFeature}>
+              <Ionicons name="calendar-outline" size={16} color="#10B981" />
+              <Text style={styles.heroFeatureText}>7j/7</Text>
+            </View>
+          </View>
+
+          <View style={styles.heroLocation}>
+            <Ionicons name="location-outline" size={16} color="#6B7280" />
+            <Text style={styles.heroLocationText}>Grand-Bassam, Côte d'Ivoire</Text>
           </View>
         </View>
 
-        {/* Section title */}
-        <Text style={styles.sectionTitle}>Terrains disponibles</Text>
+        {/* Quick Booking Section */}
+        <View style={styles.quickBookingSection}>
+          <Text style={styles.sectionTitle}>Réservez maintenant</Text>
 
-        {/* Loading state */}
-        {isLoading && courts.length === 0 && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#F97316" />
-            <Text style={styles.loadingText}>Chargement des terrains...</Text>
+          <View style={styles.sportPillsContainer}>
+            {/* Football Pill */}
+            <TouchableOpacity
+              style={[styles.sportPill, styles.footballPill]}
+              onPress={handleFootballPress}
+              activeOpacity={0.8}
+            >
+              <View style={styles.sportPillIcon}>
+                <MaterialCommunityIcons name="soccer" size={32} color="#FFFFFF" />
+              </View>
+              <Text style={styles.sportPillName}>Football</Text>
+              <Text style={styles.sportPillPrice}>
+                {footballCourt ? formatPrice(footballCourt.price) : '...'}
+              </Text>
+              <View style={styles.sportPillArrow}>
+                <Ionicons name="arrow-forward" size={16} color="#065F46" />
+              </View>
+            </TouchableOpacity>
+
+            {/* Padel Pill */}
+            <TouchableOpacity
+              style={[styles.sportPill, styles.padelPill]}
+              onPress={handlePadelPress}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.sportPillIcon, styles.padelPillIcon]}>
+                <MaterialCommunityIcons name="tennis" size={32} color="#FFFFFF" />
+              </View>
+              <Text style={styles.sportPillName}>Padel</Text>
+              <Text style={styles.sportPillPrice}>
+                {padelCourt ? formatPrice(padelCourt.price) : '...'}
+              </Text>
+              <View style={styles.sportPillArrow}>
+                <Ionicons name="arrow-forward" size={16} color="#1E40AF" />
+              </View>
+            </TouchableOpacity>
           </View>
-        )}
+        </View>
 
-        {/* Error state */}
-        {error && (
-          <View style={styles.errorContainer}>
-            <Ionicons name="warning" size={24} color="#DC2626" style={styles.errorIcon} />
-            <Text style={styles.errorText}>{error}</Text>
+        {/* Link to Reservations */}
+        <TouchableOpacity
+          style={styles.reservationsLink}
+          onPress={() => navigation.getParent()?.navigate('BookingsTab')}
+        >
+          <Ionicons name="calendar" size={20} color="#F97316" />
+          <Text style={styles.reservationsLinkText}>Voir mes réservations</Text>
+          <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+        </TouchableOpacity>
+
+        {/* Info Section */}
+        <View style={styles.infoSection}>
+          <Text style={styles.infoTitle}>Nos installations</Text>
+
+          <View style={styles.infoCard}>
+            <View style={[styles.infoIconBg, { backgroundColor: '#D1FAE5' }]}>
+              <MaterialCommunityIcons name="soccer-field" size={24} color="#065F46" />
+            </View>
+            <View style={styles.infoCardContent}>
+              <Text style={styles.infoCardTitle}>Terrain de Football</Text>
+              <Text style={styles.infoCardText}>Gazon synthétique de qualité professionnelle</Text>
+            </View>
           </View>
-        )}
 
-        {/* Courts list */}
-        {courts.map((court) => (
-          <CourtCard
-            key={court.id}
-            court={court}
-            onPress={() => handleCourtPress(court)}
-          />
-        ))}
-
-        {/* Empty state */}
-        {!isLoading && courts.length === 0 && !error && (
-          <View style={styles.emptyContainer}>
-            <MaterialCommunityIcons name="stadium-variant" size={64} color="#D1D5DB" />
-            <Text style={styles.emptyText}>
-              Aucun terrain disponible pour le moment
-            </Text>
+          <View style={styles.infoCard}>
+            <View style={[styles.infoIconBg, { backgroundColor: '#DBEAFE' }]}>
+              <MaterialCommunityIcons name="tennis" size={24} color="#1E40AF" />
+            </View>
+            <View style={styles.infoCardContent}>
+              <Text style={styles.infoCardTitle}>Court de Padel</Text>
+              <Text style={styles.infoCardText}>Court aux normes internationales</Text>
+            </View>
           </View>
-        )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -161,6 +237,25 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#1F2937',
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  creditBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+  },
+  creditBadgeText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#10B981',
+  },
   profileButton: {
     width: 44,
     height: 44,
@@ -181,31 +276,74 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
-  infoBanner: {
-    flexDirection: 'row',
-    backgroundColor: '#FFF7ED',
-    borderRadius: 12,
-    padding: 16,
+  // Hero Banner
+  heroBanner: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
     marginBottom: 24,
-    borderLeftWidth: 4,
-    borderLeftColor: '#F97316',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  infoIconContainer: {
-    marginRight: 12,
+  heroIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FFF7ED',
     justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  infoContent: {
-    flex: 1,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: '800',
     color: '#1F2937',
+    letterSpacing: 1,
     marginBottom: 4,
   },
-  infoText: {
+  heroSubtitle: {
     fontSize: 14,
     color: '#6B7280',
+    marginBottom: 16,
+  },
+  heroFeatures: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  heroFeature: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  heroFeatureText: {
+    marginLeft: 4,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  heroFeatureDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D1D5DB',
+    marginHorizontal: 12,
+  },
+  heroLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  heroLocationText: {
+    marginLeft: 4,
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  // Quick Booking Section
+  quickBookingSection: {
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 18,
@@ -213,39 +351,116 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     marginBottom: 16,
   },
-  loadingContainer: {
+  sportPillsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  sportPill: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 16,
     alignItems: 'center',
-    paddingVertical: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#6B7280',
+  footballPill: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
   },
-  errorContainer: {
+  padelPill: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  sportPillIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  padelPillIcon: {
+    backgroundColor: '#3B82F6',
+  },
+  sportPillName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  sportPillPrice: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#F97316',
+    marginBottom: 8,
+  },
+  sportPillArrow: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Reservations Link
+  reservationsLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 24,
   },
-  errorIcon: {
+  reservationsLinkText: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  // Info Section
+  infoSection: {
+    marginBottom: 20,
+  },
+  infoTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 12,
+  },
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 10,
+  },
+  infoIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
-  errorText: {
+  infoCardContent: {
     flex: 1,
-    fontSize: 14,
-    color: '#DC2626',
   },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 60,
+  infoCardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 2,
   },
-  emptyText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#9CA3AF',
-    textAlign: 'center',
+  infoCardText: {
+    fontSize: 13,
+    color: '#6B7280',
   },
 });

@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__supabase__list_projects",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__get_logs",
+      "Bash(find:*)",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__deploy_edge_function",
+      "Bash(npx expo install expo-notifications expo-device expo-constants)",
+      "Bash(npm install:*)",
+      "WebFetch(domain:docs.expo.dev)",
+      "Bash(npx tsc:*)",
+      "mcp__supabase__list_edge_functions",
+      "Bash(dir:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

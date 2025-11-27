@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../stores/authStore';
+import { useBookingStore } from '../stores/bookingStore';
 import { formatPhoneDisplay } from '../utils/phoneValidator';
+import { formatPrice } from '../utils/dateHelpers';
 import { getFullName, getInitials } from '../types';
 
 // Helper pour formatter la date pour l'affichage
@@ -36,8 +38,13 @@ const formatBirthDateForDB = (date: string): string | null => {
 
 export default function ProfileScreen() {
   const { user, signOut, updateUser } = useAuthStore();
+  const { userCreditsBalance, fetchUserCredits } = useBookingStore();
 
   const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    fetchUserCredits();
+  }, []);
   const [firstName, setFirstName] = useState(user?.first_name || '');
   const [lastName, setLastName] = useState(user?.last_name || '');
   const [birthDate, setBirthDate] = useState(formatBirthDateDisplay(user?.birth_date || null));
@@ -145,6 +152,17 @@ export default function ProfileScreen() {
               <Text style={styles.verifiedText}>Numéro vérifié</Text>
             </View>
           )}
+
+          {/* Solde crédit */}
+          <View style={styles.creditSection}>
+            <View style={styles.creditIconContainer}>
+              <Ionicons name="wallet" size={20} color="#10B981" />
+            </View>
+            <View style={styles.creditInfo}>
+              <Text style={styles.creditLabel}>Solde crédit</Text>
+              <Text style={styles.creditAmount}>{formatPrice(userCreditsBalance)}</Text>
+            </View>
+          </View>
 
           <TouchableOpacity
             style={styles.editProfileButton}
@@ -331,6 +349,38 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#065F46',
     fontWeight: '600',
+  },
+  creditSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 16,
+    width: '100%',
+  },
+  creditIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#D1FAE5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  creditInfo: {
+    flex: 1,
+  },
+  creditLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 2,
+  },
+  creditAmount: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#10B981',
   },
   // Modal styles
   modalContainer: {

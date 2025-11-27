@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,6 +15,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import PaymentMethodPicker from '../components/PaymentMethodPicker';
 import { useBookingStore } from '../stores/bookingStore';
 import { formatDate, formatPrice, formatTime } from '../utils/dateHelpers';
+import { MobilePaymentMethod } from '../types';
 
 type ConfirmationScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -28,52 +30,185 @@ export default function ConfirmationScreen({ navigation }: ConfirmationScreenPro
     selectPaymentMethod,
     createBooking,
     resetSelection,
+    checkUserCanBook,
+    payFine,
+    canBook,
+    pendingFines,
+    pendingFinesTotal,
     isLoading,
+    userCreditsBalance,
+    fetchUserCredits,
   } = useBookingStore();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showFineModal, setShowFineModal] = useState(false);
+  const [showPaymentChoiceModal, setShowPaymentChoiceModal] = useState(false);
+  const [isPayingFine, setIsPayingFine] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [selectedMobileMethod, setSelectedMobileMethod] = useState<MobilePaymentMethod | null>(null);
 
-  // Vérifications
-  if (!selectedCourt || !selectedDate || !selectedSlot) {
-    navigation.goBack();
+  // Vérifier si les données sont manquantes et rediriger
+  useEffect(() => {
+    if (!selectedCourt || !selectedDate || !selectedSlot) {
+      setShouldRedirect(true);
+    }
+  }, [selectedCourt, selectedDate, selectedSlot]);
+
+  // Rediriger si nécessaire (dans un effet séparé pour éviter l'erreur React)
+  useEffect(() => {
+    if (shouldRedirect) {
+      navigation.goBack();
+    }
+  }, [shouldRedirect, navigation]);
+
+  // Vérifier si l'utilisateur peut réserver et récupérer le solde crédit
+  useEffect(() => {
+    const initData = async () => {
+      await checkUserCanBook();
+      await fetchUserCredits();
+    };
+    initData();
+  }, []);
+
+  // Afficher le modal d'amende si nécessaire
+  useEffect(() => {
+    if (!canBook && pendingFinesTotal > 0) {
+      setShowFineModal(true);
+    }
+  }, [canBook, pendingFinesTotal]);
+
+  // Afficher rien pendant la redirection
+  if (shouldRedirect || !selectedCourt || !selectedDate || !selectedSlot) {
     return null;
   }
 
-  const handleConfirm = async () => {
+  // Déterminer si c'est un override (créneau unpaid)
+  const isOverride = selectedSlot.status === 'unpaid' && selectedSlot.can_override;
+
+  const handlePayFine = async () => {
+    if (pendingFines.length === 0) return;
+
+    setIsPayingFine(true);
+
+    // Payer toutes les amendes
+    for (const fine of pendingFines) {
+      const result = await payFine(fine.id);
+      if (!result.success) {
+        Alert.alert('Erreur', result.error || 'Erreur lors du paiement de l\'amende');
+        setIsPayingFine(false);
+        return;
+      }
+    }
+
+    setIsPayingFine(false);
+    setShowFineModal(false);
+    Alert.alert('Succès', 'Amende payée avec succès. Vous pouvez maintenant réserver.');
+  };
+
+  const handleConfirmPress = () => {
     if (!selectedPaymentMethod) {
       Alert.alert('Attention', 'Veuillez choisir un mode de paiement');
       return;
     }
 
+    // Si c'est un override, on doit payer obligatoirement
+    if (isOverride) {
+      handleBooking(true);
+      return;
+    }
+
+    // Si paiement mobile (Orange Money / Wave) → paiement direct
+    if (selectedPaymentMethod === 'orange_money' || selectedPaymentMethod === 'wave') {
+      handleBooking(true);
+      return;
+    }
+
+    // Si paiement par espèces → proposer le choix (payer ou réserver sans payer)
+    if (selectedPaymentMethod === 'cash') {
+      setShowPaymentChoiceModal(true);
+      return;
+    }
+
+    // Autres cas (credit, credit_and_mobile) → paiement direct
+    handleBooking(true);
+  };
+
+  const handleBooking = async (isPaying: boolean) => {
+    setShowPaymentChoiceModal(false);
     setIsSubmitting(true);
 
-    const result = await createBooking();
+    // Déterminer si on utilise le crédit
+    const useCredit = isPaying && userCreditsBalance > 0;
+
+    const result = await createBooking(isPaying, useCredit, selectedMobileMethod || undefined);
 
     setIsSubmitting(false);
 
-    if (result.success) {
+    // Cas spécial: l'utilisateur essaie de payer sa propre réservation non payée
+    if (result.own_unpaid_booking) {
       Alert.alert(
-        'Réservation confirmée ! 🎉',
-        `Votre ${selectedCourt.type === 'football' ? 'terrain de football' : 'court de padel'} est réservé pour le ${formatDate(selectedDate, 'd MMMM')} à ${formatTime(selectedSlot.start_time)}.`,
+        'Réservation existante',
+        'Vous avez déjà une réservation non payée pour ce créneau. Rendez-vous dans vos réservations pour la payer.',
         [
           {
             text: 'Voir mes réservations',
             onPress: () => {
               resetSelection();
-              navigation.navigate('Profile');
+              navigation.getParent()?.navigate('BookingsTab');
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    if (result.success) {
+      const paymentMessage = isPaying
+        ? 'Votre réservation est confirmée et verrouillée.'
+        : 'Votre réservation est confirmée mais peut être prise par quelqu\'un qui paie.';
+
+      Alert.alert(
+        'Réservation confirmée ! ',
+        `${selectedCourt.type === 'football' ? 'Terrain de football' : 'Court de padel'} réservé pour le ${formatDate(selectedDate, 'd MMMM')} à ${formatTime(selectedSlot.start_time)}.\n\n${paymentMessage}`,
+        [
+          {
+            text: 'Voir mes réservations',
+            onPress: () => {
+              resetSelection();
+              navigation.getParent()?.navigate('BookingsTab');
             },
           },
           {
             text: 'OK',
             onPress: () => {
               resetSelection();
-              navigation.navigate('Home');
+              navigation.popToTop();
             },
           },
         ]
       );
     } else {
-      Alert.alert('Erreur', result.error || 'Une erreur est survenue');
+      // Gérer les erreurs spécifiques de verrouillage de créneau
+      if (result.error_code === 'SLOT_LOCKED') {
+        Alert.alert(
+          'Créneau en cours de réservation',
+          'Ce créneau est en cours de réservation par un autre utilisateur. Réessayez dans quelques instants.',
+          [{ text: 'OK' }]
+        );
+      } else if (result.error_code === 'SLOT_ALREADY_BOOKED') {
+        Alert.alert(
+          'Créneau indisponible',
+          'Ce créneau est déjà réservé par un autre utilisateur.',
+          [
+            {
+              text: 'Choisir un autre créneau',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Erreur', result.error || 'Une erreur est survenue');
+      }
     }
   };
 
@@ -96,6 +231,16 @@ export default function ConfirmationScreen({ navigation }: ConfirmationScreenPro
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Banner si override */}
+        {isOverride && (
+          <View style={styles.overrideBanner}>
+            <Ionicons name="flash" size={20} color="#F59E0B" />
+            <Text style={styles.overrideBannerText}>
+              Ce créneau est réservé sans paiement. En payant, vous prenez la place.
+            </Text>
+          </View>
+        )}
+
         {/* Récapitulatif */}
         <View style={styles.summaryCard}>
           <View style={styles.summaryHeader}>
@@ -157,6 +302,10 @@ export default function ConfirmationScreen({ navigation }: ConfirmationScreenPro
           <PaymentMethodPicker
             selected={selectedPaymentMethod}
             onSelect={selectPaymentMethod}
+            creditBalance={userCreditsBalance}
+            totalAmount={selectedCourt.price}
+            selectedMobileMethod={selectedMobileMethod}
+            onMobileMethodSelect={setSelectedMobileMethod}
           />
         </View>
 
@@ -164,7 +313,10 @@ export default function ConfirmationScreen({ navigation }: ConfirmationScreenPro
         <View style={styles.infoContainer}>
           <Ionicons name="information-circle" size={20} color="#6B7280" style={styles.infoIcon} />
           <Text style={styles.infoText}>
-            La réservation sera confirmée immédiatement. Vous pouvez annuler gratuitement jusqu'à 12h avant.
+            {isOverride
+              ? 'Le paiement est obligatoire pour prendre ce créneau. L\'ancien utilisateur sera notifié.'
+              : 'Sans paiement immédiat, quelqu\'un peut prendre votre créneau en payant. Annulation gratuite jusqu\'à 12h avant.'
+            }
           </Text>
         </View>
       </ScrollView>
@@ -176,7 +328,7 @@ export default function ConfirmationScreen({ navigation }: ConfirmationScreenPro
             styles.confirmButton,
             (!selectedPaymentMethod || isSubmitting) && styles.confirmButtonDisabled,
           ]}
-          onPress={handleConfirm}
+          onPress={handleConfirmPress}
           disabled={!selectedPaymentMethod || isSubmitting}
           activeOpacity={0.8}
         >
@@ -184,12 +336,109 @@ export default function ConfirmationScreen({ navigation }: ConfirmationScreenPro
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <>
-              <Text style={styles.confirmButtonText}>Confirmer la réservation</Text>
+              <Text style={styles.confirmButtonText}>
+                {isOverride ? 'Payer et prendre le créneau' : 'Confirmer la réservation'}
+              </Text>
               <Text style={styles.confirmButtonPrice}>{formatPrice(selectedCourt.price)}</Text>
             </>
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Modal Amendes */}
+      <Modal
+        visible={showFineModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {}}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="warning" size={48} color="#EF4444" />
+            </View>
+            <Text style={styles.modalTitle}>Amende en attente</Text>
+            <Text style={styles.modalText}>
+              Vous avez une amende de {formatPrice(pendingFinesTotal)} à régler avant de pouvoir réserver.
+            </Text>
+            {pendingFines.map((fine) => (
+              <View key={fine.id} style={styles.fineItem}>
+                <Text style={styles.fineReason}>{fine.reason}</Text>
+                <Text style={styles.fineAmount}>{formatPrice(fine.amount)}</Text>
+              </View>
+            ))}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setShowFineModal(false);
+                  navigation.goBack();
+                }}
+              >
+                <Text style={styles.modalCancelButtonText}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalPayButton}
+                onPress={handlePayFine}
+                disabled={isPayingFine}
+              >
+                {isPayingFine ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.modalPayButtonText}>Payer l'amende</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Choix de paiement */}
+      <Modal
+        visible={showPaymentChoiceModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPaymentChoiceModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.paymentChoiceModal}>
+            <Text style={styles.paymentChoiceTitle}>Payer maintenant ?</Text>
+            <Text style={styles.paymentChoiceText}>
+              En payant maintenant, votre créneau est garanti et ne peut pas être pris par quelqu'un d'autre.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.payNowButton}
+              onPress={() => handleBooking(true)}
+            >
+              <Ionicons name="shield-checkmark" size={24} color="#FFFFFF" />
+              <View style={styles.payNowButtonContent}>
+                <Text style={styles.payNowButtonText}>Payer maintenant</Text>
+                <Text style={styles.payNowButtonSubtext}>Créneau verrouillé</Text>
+              </View>
+              <Text style={styles.payNowButtonPrice}>{formatPrice(selectedCourt.price)}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.payLaterButton}
+              onPress={() => handleBooking(false)}
+            >
+              <Ionicons name="time-outline" size={24} color="#6B7280" />
+              <View style={styles.payLaterButtonContent}>
+                <Text style={styles.payLaterButtonText}>Réserver sans payer</Text>
+                <Text style={styles.payLaterButtonSubtext}>Peut être pris par un payant</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelChoiceButton}
+              onPress={() => setShowPaymentChoiceModal(false)}
+            >
+              <Text style={styles.cancelChoiceButtonText}>Annuler</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -228,6 +477,21 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 120,
+  },
+  overrideBanner: {
+    flexDirection: 'row',
+    backgroundColor: '#FEF3C7',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  overrideBannerText: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 14,
+    color: '#92400E',
+    lineHeight: 20,
   },
   summaryCard: {
     backgroundColor: '#FFFFFF',
@@ -374,5 +638,165 @@ const styles = StyleSheet.create({
     color: '#FED7AA',
     fontSize: 16,
     fontWeight: '700',
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+  },
+  modalIconContainer: {
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  modalText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  fineItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#FEF2F2',
+    borderRadius: 8,
+    padding: 12,
+    width: '100%',
+    marginBottom: 12,
+  },
+  fineReason: {
+    fontSize: 12,
+    color: '#991B1B',
+    flex: 1,
+  },
+  fineAmount: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#EF4444',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalCancelButton: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  modalCancelButtonText: {
+    color: '#6B7280',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalPayButton: {
+    flex: 1,
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  modalPayButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  // Payment choice modal
+  paymentChoiceModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+  },
+  paymentChoiceTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  paymentChoiceText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  payNowButton: {
+    flexDirection: 'row',
+    backgroundColor: '#10B981',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  payNowButtonContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  payNowButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  payNowButtonSubtext: {
+    color: '#A7F3D0',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  payNowButtonPrice: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  payLaterButton: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  payLaterButtonContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  payLaterButtonText: {
+    color: '#1F2937',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  payLaterButtonSubtext: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  cancelChoiceButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  cancelChoiceButtonText: {
+    color: '#6B7280',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

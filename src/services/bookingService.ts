@@ -20,9 +20,10 @@ export async function getAvailableSlots(courtId: string, date: Date): Promise<Av
 
 /**
  * Crée une nouvelle réservation
+ * @param isPaying - true si l'utilisateur paie maintenant, false sinon
  */
-export async function createBooking(): Promise<{ success: boolean; booking?: Booking; error?: string }> {
-  return useBookingStore.getState().createBooking();
+export async function createBooking(isPaying: boolean = false): Promise<{ success: boolean; booking?: Booking; error?: string }> {
+  return useBookingStore.getState().createBooking(isPaying);
 }
 
 /**
