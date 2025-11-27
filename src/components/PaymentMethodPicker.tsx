@@ -122,7 +122,13 @@ export default function PaymentMethodPicker({
                     isSelected && styles.optionSelected,
                     isSelected && { borderColor: option.color },
                   ]}
-                  onPress={() => onSelect(option.id)}
+                  onPress={() => {
+                    onSelect(option.id);
+                    // Si c'est une méthode mobile, notifier aussi le parent
+                    if ((option.id === 'orange_money' || option.id === 'wave') && onMobileMethodSelect) {
+                      onMobileMethodSelect(option.id as MobilePaymentMethod);
+                    }
+                  }}
                   activeOpacity={0.7}
                 >
                   <View style={styles.optionHeader}>
