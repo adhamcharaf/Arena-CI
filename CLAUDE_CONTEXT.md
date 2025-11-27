@@ -66,7 +66,10 @@ arena-app/
 │   │   ├── TimeSlotPicker.tsx
 │   │   ├── PaymentMethodPicker.tsx
 │   │   ├── BookingDetailModal.tsx
-│   │   └── Skeleton.tsx
+│   │   ├── Skeleton.tsx
+│   │   ├── ImageCarousel.tsx      # Carousel photos (placeholder)
+│   │   ├── EventContactForm.tsx   # Formulaire contact evenements
+│   │   └── ContactSection.tsx     # Section contact (tel/email/maps)
 │   ├── theme/
 │   │   ├── index.ts           # Exports theme
 │   │   ├── colors.ts          # Palette de couleurs
@@ -408,6 +411,31 @@ Si un creneau est `unpaid` par un autre utilisateur ET que `is_paying=true`:
 
 ---
 
+### `send-event-inquiry`
+**But:** Envoyer une demande d'evenement par email.
+
+**Input:**
+```json
+{
+  "name": "John Doe",
+  "phone": "+225 01 02 03 04 05",
+  "event_type": "Anniversaire",
+  "message": "Description de l'evenement..."
+}
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "message": "Votre demande a ete envoyee"
+}
+```
+
+**Prerequis:** API key Resend configuree dans les secrets Supabase (`RESEND_API_KEY`)
+
+---
+
 ## 5. REGLES METIER VALIDEES
 
 ### Authentification
@@ -468,6 +496,11 @@ Si un creneau est `unpaid` par un autre utilisateur ET que `is_paying=true`:
 - [x] Affichage solde credits (toujours visible, meme a 0)
 - [x] Bouton profil avec initiales utilisateur
 - [x] Card terrain avec icone, badge type, prix
+- [x] Section "Autres activites" (Volleyball, Petanque, Fitness, Arts Martiaux)
+- [x] Section "Espace detente" (Snack-bar, Terrasse, Jeux, Cafeteria)
+- [x] Galerie photos placeholder (ImageCarousel)
+- [x] Formulaire contact evenements (EventContactForm)
+- [x] Section contact (telephone, email, maps cliquables)
 
 ### Ecran Booking
 - [x] Calendrier avec locale francaise
@@ -641,6 +674,7 @@ npx tsc --noEmit        # Verifier types TypeScript
 | 2025-11-27 | Solde credits toujours visible + badge credit et profil sur Booking/Bookings | - |
 | 2025-11-27 | Filtrage creneaux passes base sur date+heure (empeche annulation) | - |
 | 2025-11-27 | UX paiement amelioree: confirmation avant credit, scroll modal corrige | - |
+| 2025-11-27 | Refonte page accueil: activites, espace detente, galerie, formulaire evenements, contact | - |
 
 ---
 

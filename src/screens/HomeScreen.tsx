@@ -17,6 +17,25 @@ import { getInitials } from '../types';
 import { formatPrice } from '../utils/dateHelpers';
 import { colors, spacing, borderRadius, shadows, textStyles } from '../theme';
 import haptics from '../utils/haptics';
+import ImageCarousel from '../components/ImageCarousel';
+import EventContactForm from '../components/EventContactForm';
+import ContactSection from '../components/ContactSection';
+
+// Données statiques pour les autres activités
+const OTHER_ACTIVITIES = [
+  { id: 'volleyball', name: 'Volleyball', icon: 'volleyball' as const, color: '#8B5CF6' },
+  { id: 'petanque', name: 'Pétanque', icon: 'billiards-rack' as const, color: '#EC4899' },
+  { id: 'fitness', name: 'Fitness', icon: 'dumbbell' as const, color: '#EF4444' },
+  { id: 'martial', name: 'Arts Martiaux', icon: 'karate' as const, color: '#F59E0B' },
+];
+
+// Données statiques pour l'espace détente
+const AMENITIES = [
+  { id: 'snack', name: 'Snack-bar', description: 'Restauration sur place', icon: 'food' as const, color: '#F97316' },
+  { id: 'terrace', name: 'Terrasse', description: 'Espace détente', icon: 'umbrella-beach' as const, color: '#10B981' },
+  { id: 'games', name: 'Jeux', description: 'Baby-foot, Billard, Ping-pong', icon: 'table-tennis' as const, color: '#3B82F6' },
+  { id: 'cafe', name: 'Cafétéria', description: 'Boissons fraîches', icon: 'coffee' as const, color: '#8B5CF6' },
+];
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -194,9 +213,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
         </TouchableOpacity>
 
-        {/* Info Section */}
+        {/* Info Section - Terrains réservables */}
         <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Nos installations</Text>
+          <Text style={styles.sectionTitle}>Nos terrains</Text>
 
           <View style={styles.infoCard}>
             <View style={[styles.infoIconBg, { backgroundColor: colors.sport.football.light }]}>
@@ -225,6 +244,66 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               <Text style={styles.infoCardText}>Court aux normes internationales</Text>
             </View>
           </View>
+        </View>
+
+        {/* Autres activités */}
+        <View style={styles.activitiesSection}>
+          <Text style={styles.sectionTitle}>Autres activités</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.activitiesScroll}
+          >
+            {OTHER_ACTIVITIES.map((activity) => (
+              <View key={activity.id} style={styles.activityCard}>
+                <View style={[styles.activityIconBg, { backgroundColor: activity.color + '15' }]}>
+                  <MaterialCommunityIcons
+                    name={activity.icon}
+                    size={28}
+                    color={activity.color}
+                  />
+                </View>
+                <Text style={styles.activityName}>{activity.name}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Espace détente */}
+        <View style={styles.amenitiesSection}>
+          <Text style={styles.sectionTitle}>Espace détente</Text>
+          <View style={styles.amenitiesGrid}>
+            {AMENITIES.map((amenity) => (
+              <View key={amenity.id} style={styles.amenityCard}>
+                <View style={[styles.amenityIconBg, { backgroundColor: amenity.color + '15' }]}>
+                  <MaterialCommunityIcons
+                    name={amenity.icon}
+                    size={24}
+                    color={amenity.color}
+                  />
+                </View>
+                <Text style={styles.amenityName}>{amenity.name}</Text>
+                <Text style={styles.amenityDescription}>{amenity.description}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Galerie photos placeholder */}
+        <View style={styles.gallerySection}>
+          <Text style={styles.sectionTitle}>Galerie photos</Text>
+          <ImageCarousel />
+        </View>
+
+        {/* Formulaire événements */}
+        <View style={styles.eventsSection}>
+          <EventContactForm />
+        </View>
+
+        {/* Section contact */}
+        <View style={styles.contactSection}>
+          <Text style={styles.sectionTitle}>Nous contacter</Text>
+          <ContactSection />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -460,5 +539,85 @@ const styles = StyleSheet.create({
   infoCardText: {
     ...textStyles.caption,
     color: colors.text.secondary,
+  },
+  // Autres activités
+  activitiesSection: {
+    marginBottom: spacing['2xl'],
+  },
+  activitiesScroll: {
+    paddingRight: spacing.xl,
+    gap: spacing.md,
+  },
+  activityCard: {
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius.card,
+    padding: spacing.lg,
+    alignItems: 'center',
+    width: 100,
+    ...shadows.sm,
+  },
+  activityIconBg: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  activityName: {
+    fontSize: 13,
+    fontFamily: textStyles.label.fontFamily,
+    fontWeight: '600',
+    color: colors.text.primary,
+    textAlign: 'center',
+  },
+  // Espace détente
+  amenitiesSection: {
+    marginBottom: spacing['2xl'],
+  },
+  amenitiesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  amenityCard: {
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius.card,
+    padding: spacing.lg,
+    width: '48.5%' as any,
+    marginBottom: spacing.md,
+    ...shadows.sm,
+  },
+  amenityIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  amenityName: {
+    fontSize: 15,
+    fontFamily: textStyles.label.fontFamily,
+    fontWeight: '700',
+    color: colors.text.primary,
+    marginBottom: 2,
+  },
+  amenityDescription: {
+    ...textStyles.caption,
+    color: colors.text.secondary,
+  },
+  // Galerie
+  gallerySection: {
+    marginBottom: spacing['2xl'],
+    alignItems: 'center',
+  },
+  // Événements
+  eventsSection: {
+    marginBottom: spacing['2xl'],
+  },
+  // Contact
+  contactSection: {
+    marginBottom: spacing.xl,
   },
 });
