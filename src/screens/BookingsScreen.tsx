@@ -177,17 +177,20 @@ export default function BookingsScreen({ navigation }: BookingsScreenProps) {
     );
   };
 
-  // Filtrer les réservations
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Filtrer les réservations (basé sur date + heure du créneau)
+  const now = new Date();
 
-  const upcomingBookings = userBookings.filter(
-    b => ['paid', 'unpaid', 'confirmed'].includes(b.status) && new Date(b.date) >= today
-  );
+  const upcomingBookings = userBookings.filter(b => {
+    if (!['paid', 'unpaid', 'confirmed'].includes(b.status)) return false;
+    const bookingDateTime = new Date(`${b.date}T${b.time_slot?.start_time || '00:00:00'}`);
+    return bookingDateTime > now;
+  });
 
-  const pastBookings = userBookings.filter(
-    b => !['paid', 'unpaid', 'confirmed'].includes(b.status) || new Date(b.date) < today
-  );
+  const pastBookings = userBookings.filter(b => {
+    if (!['paid', 'unpaid', 'confirmed'].includes(b.status)) return true;
+    const bookingDateTime = new Date(`${b.date}T${b.time_slot?.start_time || '00:00:00'}`);
+    return bookingDateTime <= now;
+  });
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

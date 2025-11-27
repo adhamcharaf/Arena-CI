@@ -495,6 +495,7 @@ Si un creneau est `unpaid` par un autre utilisateur ET que `is_paying=true`:
 - [x] Payer reservation non payee
 - [x] Annuler reservation
 - [x] Affichage solde credits et bouton profil dans header
+- [x] Filtrage "a venir" vs "passe" base sur date + heure du creneau
 
 ### Ecran Profile
 - [x] Affichage infos utilisateur
@@ -634,6 +635,7 @@ npx tsc --noEmit        # Verifier types TypeScript
 |------|--------------|------------|
 | 2025-11-27 | Documentation initiale creee | - |
 | 2025-11-27 | Solde credits toujours visible + badge credit et profil sur Booking/Bookings | - |
+| 2025-11-27 | Filtrage creneaux passes base sur date+heure (empeche annulation) | - |
 
 ---
 
