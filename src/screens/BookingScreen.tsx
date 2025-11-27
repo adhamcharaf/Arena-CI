@@ -10,9 +10,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
+import { Ionicons } from '@expo/vector-icons';
 import TimeSlotPicker from '../components/TimeSlotPicker';
 import { useBookingStore } from '../stores/bookingStore';
+import { useAuthStore } from '../stores/authStore';
+import { getInitials } from '../types';
 import { formatDate, formatDateForApi, formatPrice, getNextDays } from '../utils/dateHelpers';
+import { colors, spacing, borderRadius, textStyles } from '../theme';
+import haptics from '../utils/haptics';
 
 // Configuration locale française pour le calendrier
 LocaleConfig.locales['fr'] = {
@@ -44,7 +49,9 @@ export default function BookingScreen({ navigation }: BookingScreenProps) {
     selectSlot,
     isLoading,
     error,
+    userCreditsBalance,
   } = useBookingStore();
+  const { user } = useAuthStore();
 
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
 
@@ -70,6 +77,11 @@ export default function BookingScreen({ navigation }: BookingScreenProps) {
     }
   };
 
+  const handleProfilePress = () => {
+    haptics.light();
+    navigation.getParent()?.navigate('ProfileTab');
+  };
+
   // Dates min et max (aujourd'hui + 14 jours)
   const today = formatDateForApi(new Date());
   const maxDate = formatDateForApi(getNextDays(14)[13]);
@@ -87,6 +99,15 @@ export default function BookingScreen({ navigation }: BookingScreenProps) {
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>{selectedCourt.name}</Text>
           <Text style={styles.headerSubtitle}>{formatPrice(selectedCourt.price)} / {selectedCourt.duration} min</Text>
+        </View>
+        <View style={styles.headerRight}>
+          <View style={styles.creditBadge}>
+            <Ionicons name="wallet-outline" size={14} color={colors.success.main} />
+            <Text style={styles.creditBadgeText}>{formatPrice(userCreditsBalance)}</Text>
+          </View>
+          <TouchableOpacity style={styles.profileButton} onPress={handleProfilePress}>
+            <Text style={styles.profileButtonText}>{getInitials(user)}</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -224,6 +245,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#F97316',
     fontWeight: '600',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  creditBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.success.light,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
+  },
+  creditBadgeText: {
+    fontSize: 12,
+    fontFamily: textStyles.label.fontFamily,
+    fontWeight: '600',
+    color: colors.success.main,
+  },
+  profileButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primary.main,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileButtonText: {
+    fontSize: 13,
+    fontFamily: textStyles.button.fontFamily,
+    color: colors.neutral[0],
+    fontWeight: '700',
   },
   scrollView: {
     flex: 1,

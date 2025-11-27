@@ -15,9 +15,11 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../stores/authStore';
 import { useBookingStore } from '../stores/bookingStore';
 import { formatDate, formatTime, formatPrice } from '../utils/dateHelpers';
+import { colors, spacing, borderRadius, textStyles } from '../theme';
+import haptics from '../utils/haptics';
 import CourtCard from '../components/CourtCard';
 import BookingDetailModal from '../components/BookingDetailModal';
-import { Court, Booking, BookingStatus, PaymentMethod, MobilePaymentMethod } from '../types';
+import { Court, Booking, BookingStatus, PaymentMethod, MobilePaymentMethod, getInitials } from '../types';
 
 type BookingsScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -88,6 +90,11 @@ export default function BookingsScreen({ navigation }: BookingsScreenProps) {
       fetchUserBookings(user.id);
       checkUserCanBook();
     }
+  };
+
+  const handleProfilePress = () => {
+    haptics.light();
+    navigation.getParent()?.navigate('ProfileTab');
   };
 
   const handleBookingPress = (booking: Booking) => {
@@ -187,6 +194,15 @@ export default function BookingsScreen({ navigation }: BookingsScreenProps) {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Mes réservations</Text>
+        <View style={styles.headerRight}>
+          <View style={styles.creditBadge}>
+            <Ionicons name="wallet-outline" size={14} color={colors.success.main} />
+            <Text style={styles.creditBadgeText}>{formatPrice(userCreditsBalance)}</Text>
+          </View>
+          <TouchableOpacity style={styles.profileButton} onPress={handleProfilePress}>
+            <Text style={styles.profileButtonText}>{getInitials(user)}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -372,6 +388,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 16,
     backgroundColor: '#FFFFFF',
@@ -382,6 +401,40 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: '#1F2937',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  creditBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.success.light,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
+  },
+  creditBadgeText: {
+    fontSize: 12,
+    fontFamily: textStyles.label.fontFamily,
+    fontWeight: '600',
+    color: colors.success.main,
+  },
+  profileButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary.main,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileButtonText: {
+    fontSize: 14,
+    fontFamily: textStyles.button.fontFamily,
+    color: colors.neutral[0],
+    fontWeight: '700',
   },
   scrollView: {
     flex: 1,

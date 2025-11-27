@@ -86,12 +86,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
         {/* Credit badge + Profile button */}
         <View style={styles.headerRight}>
-          {userCreditsBalance > 0 && (
-            <View style={styles.creditBadge}>
-              <Ionicons name="wallet-outline" size={14} color={colors.success.main} />
-              <Text style={styles.creditBadgeText}>{formatPrice(userCreditsBalance)}</Text>
-            </View>
-          )}
+          <View style={styles.creditBadge}>
+            <Ionicons name="wallet-outline" size={14} color={colors.success.main} />
+            <Text style={styles.creditBadgeText}>{formatPrice(userCreditsBalance)}</Text>
+          </View>
           <TouchableOpacity
             style={styles.profileButton}
             onPress={handleProfilePress}
