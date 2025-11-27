@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,6 +15,8 @@ import { useBookingStore } from '../stores/bookingStore';
 import { useAuthStore } from '../stores/authStore';
 import { getInitials } from '../types';
 import { formatPrice } from '../utils/dateHelpers';
+import { colors, spacing, borderRadius, shadows, textStyles } from '../theme';
+import haptics from '../utils/haptics';
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -38,6 +41,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const handleFootballPress = () => {
     if (footballCourt) {
+      haptics.light();
       selectCourt(footballCourt);
       navigation.navigate('Booking');
     }
@@ -45,9 +49,20 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const handlePadelPress = () => {
     if (padelCourt) {
+      haptics.light();
       selectCourt(padelCourt);
       navigation.navigate('Booking');
     }
+  };
+
+  const handleProfilePress = () => {
+    haptics.light();
+    navigation.getParent()?.navigate('ProfileTab');
+  };
+
+  const handleBookingsPress = () => {
+    haptics.light();
+    navigation.getParent()?.navigate('BookingsTab');
   };
 
   return (
@@ -59,7 +74,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             <Text style={styles.greeting}>
               Bonjour{user?.first_name ? `, ${user.first_name}` : ''}
             </Text>
-            <MaterialCommunityIcons name="hand-wave" size={16} color="#F97316" style={styles.waveIcon} />
+            <MaterialCommunityIcons
+              name="hand-wave"
+              size={16}
+              color={colors.primary.main}
+              style={styles.waveIcon}
+            />
           </View>
           <Text style={styles.headerTitle}>Bienvenue</Text>
         </View>
@@ -68,13 +88,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         <View style={styles.headerRight}>
           {userCreditsBalance > 0 && (
             <View style={styles.creditBadge}>
-              <Ionicons name="wallet-outline" size={14} color="#10B981" />
+              <Ionicons name="wallet-outline" size={14} color={colors.success.main} />
               <Text style={styles.creditBadgeText}>{formatPrice(userCreditsBalance)}</Text>
             </View>
           )}
           <TouchableOpacity
             style={styles.profileButton}
-            onPress={() => navigation.getParent()?.navigate('ProfileTab')}
+            onPress={handleProfilePress}
           >
             <Text style={styles.profileButtonText}>
               {getInitials(user)}
@@ -92,33 +112,33 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           <RefreshControl
             refreshing={isLoading}
             onRefresh={handleRefresh}
-            colors={['#F97316']}
-            tintColor="#F97316"
+            colors={[colors.primary.main]}
+            tintColor={colors.primary.main}
           />
         }
       >
-        {/* Hero Banner */}
+        {/* Hero Banner with Arena Logo */}
         <View style={styles.heroBanner}>
-          <View style={styles.heroIconContainer}>
-            <MaterialCommunityIcons name="stadium-variant" size={48} color="#F97316" />
-          </View>
-          <Text style={styles.heroTitle}>ARENA GRAND-BASSAM</Text>
-          <Text style={styles.heroSubtitle}>Votre complexe sportif</Text>
+          <Image
+            source={require('../../assets/Arena-Icon.png')}
+            style={styles.heroLogo}
+            resizeMode="contain"
+          />
 
           <View style={styles.heroFeatures}>
             <View style={styles.heroFeature}>
-              <Ionicons name="time-outline" size={16} color="#10B981" />
+              <Ionicons name="time-outline" size={16} color={colors.success.main} />
               <Text style={styles.heroFeatureText}>Ouvert 24h/24</Text>
             </View>
             <View style={styles.heroFeatureDot} />
             <View style={styles.heroFeature}>
-              <Ionicons name="calendar-outline" size={16} color="#10B981" />
+              <Ionicons name="calendar-outline" size={16} color={colors.success.main} />
               <Text style={styles.heroFeatureText}>7j/7</Text>
             </View>
           </View>
 
           <View style={styles.heroLocation}>
-            <Ionicons name="location-outline" size={16} color="#6B7280" />
+            <Ionicons name="location-outline" size={16} color={colors.text.secondary} />
             <Text style={styles.heroLocationText}>Grand-Bassam, Côte d'Ivoire</Text>
           </View>
         </View>
@@ -135,14 +155,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               activeOpacity={0.8}
             >
               <View style={styles.sportPillIcon}>
-                <MaterialCommunityIcons name="soccer" size={32} color="#FFFFFF" />
+                <MaterialCommunityIcons name="soccer" size={32} color={colors.neutral[0]} />
               </View>
               <Text style={styles.sportPillName}>Football</Text>
               <Text style={styles.sportPillPrice}>
                 {footballCourt ? formatPrice(footballCourt.price) : '...'}
               </Text>
               <View style={styles.sportPillArrow}>
-                <Ionicons name="arrow-forward" size={16} color="#065F46" />
+                <Ionicons name="arrow-forward" size={16} color={colors.sport.football.dark} />
               </View>
             </TouchableOpacity>
 
@@ -153,14 +173,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               activeOpacity={0.8}
             >
               <View style={[styles.sportPillIcon, styles.padelPillIcon]}>
-                <MaterialCommunityIcons name="tennis" size={32} color="#FFFFFF" />
+                <MaterialCommunityIcons name="tennis" size={32} color={colors.neutral[0]} />
               </View>
               <Text style={styles.sportPillName}>Padel</Text>
               <Text style={styles.sportPillPrice}>
                 {padelCourt ? formatPrice(padelCourt.price) : '...'}
               </Text>
               <View style={styles.sportPillArrow}>
-                <Ionicons name="arrow-forward" size={16} color="#1E40AF" />
+                <Ionicons name="arrow-forward" size={16} color={colors.sport.padel.dark} />
               </View>
             </TouchableOpacity>
           </View>
@@ -169,20 +189,24 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         {/* Link to Reservations */}
         <TouchableOpacity
           style={styles.reservationsLink}
-          onPress={() => navigation.getParent()?.navigate('BookingsTab')}
+          onPress={handleBookingsPress}
         >
-          <Ionicons name="calendar" size={20} color="#F97316" />
+          <Ionicons name="calendar" size={20} color={colors.primary.main} />
           <Text style={styles.reservationsLinkText}>Voir mes réservations</Text>
-          <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+          <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
         </TouchableOpacity>
 
         {/* Info Section */}
         <View style={styles.infoSection}>
-          <Text style={styles.infoTitle}>Nos installations</Text>
+          <Text style={styles.sectionTitle}>Nos installations</Text>
 
           <View style={styles.infoCard}>
-            <View style={[styles.infoIconBg, { backgroundColor: '#D1FAE5' }]}>
-              <MaterialCommunityIcons name="soccer-field" size={24} color="#065F46" />
+            <View style={[styles.infoIconBg, { backgroundColor: colors.sport.football.light }]}>
+              <MaterialCommunityIcons
+                name="soccer-field"
+                size={24}
+                color={colors.sport.football.dark}
+              />
             </View>
             <View style={styles.infoCardContent}>
               <Text style={styles.infoCardTitle}>Terrain de Football</Text>
@@ -191,8 +215,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           </View>
 
           <View style={styles.infoCard}>
-            <View style={[styles.infoIconBg, { backgroundColor: '#DBEAFE' }]}>
-              <MaterialCommunityIcons name="tennis" size={24} color="#1E40AF" />
+            <View style={[styles.infoIconBg, { backgroundColor: colors.sport.padel.light }]}>
+              <MaterialCommunityIcons
+                name="tennis"
+                size={24}
+                color={colors.sport.padel.dark}
+              />
             </View>
             <View style={styles.infoCardContent}>
               <Text style={styles.infoCardTitle}>Court de Padel</Text>
@@ -208,171 +236,147 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background.secondary,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.background.primary,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border.default,
   },
   greetingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   greeting: {
-    fontSize: 14,
-    color: '#6B7280',
+    ...textStyles.bodySmall,
+    color: colors.text.secondary,
   },
   waveIcon: {
-    marginLeft: 4,
+    marginLeft: spacing.xs,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1F2937',
+    ...textStyles.h2,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: spacing.sm + 2,
   },
   creditBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 4,
+    backgroundColor: colors.success.light,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
   },
   creditBadgeText: {
     fontSize: 13,
+    fontFamily: textStyles.label.fontFamily,
     fontWeight: '600',
-    color: '#10B981',
+    color: colors.success.main,
   },
   profileButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#F97316',
+    backgroundColor: colors.primary.main,
     justifyContent: 'center',
     alignItems: 'center',
   },
   profileButtonText: {
     fontSize: 16,
-    color: '#FFFFFF',
+    fontFamily: textStyles.button.fontFamily,
+    color: colors.neutral[0],
     fontWeight: '700',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: spacing.xl,
+    paddingBottom: spacing['4xl'],
   },
   // Hero Banner
   heroBanner: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius['2xl'],
+    padding: spacing['2xl'],
     alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    marginBottom: spacing['2xl'],
+    ...shadows.card,
   },
-  heroIconContainer: {
-    width: 80,
+  heroLogo: {
+    width: 220,
     height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FFF7ED',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  heroTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#1F2937',
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  heroSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   heroFeatures: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   heroFeature: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   heroFeatureText: {
-    marginLeft: 4,
+    marginLeft: spacing.xs,
     fontSize: 14,
+    fontFamily: textStyles.label.fontFamily,
     fontWeight: '600',
-    color: '#10B981',
+    color: colors.success.main,
   },
   heroFeatureDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#D1D5DB',
-    marginHorizontal: 12,
+    backgroundColor: colors.neutral[300],
+    marginHorizontal: spacing.md,
   },
   heroLocation: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   heroLocationText: {
-    marginLeft: 4,
+    marginLeft: spacing.xs,
     fontSize: 13,
-    color: '#6B7280',
+    fontFamily: textStyles.caption.fontFamily,
+    color: colors.text.secondary,
   },
   // Quick Booking Section
   quickBookingSection: {
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 16,
+    ...textStyles.h4,
+    marginBottom: spacing.lg,
   },
   sportPillsContainer: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing.md,
   },
   sportPill: {
     flex: 1,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: borderRadius.card,
+    padding: spacing.lg,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    ...shadows.sm,
   },
   footballPill: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: colors.sport.football.light,
     borderWidth: 1,
     borderColor: '#A7F3D0',
   },
   padelPill: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: colors.sport.padel.light,
     borderWidth: 1,
     borderColor: '#BFDBFE',
   },
@@ -380,31 +384,31 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#10B981',
+    backgroundColor: colors.sport.football.main,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   padelPillIcon: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: colors.sport.padel.main,
   },
   sportPillName: {
+    ...textStyles.label,
     fontSize: 16,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   sportPillPrice: {
     fontSize: 15,
+    fontFamily: textStyles.label.fontFamily,
     fontWeight: '600',
-    color: '#F97316',
-    marginBottom: 8,
+    color: colors.primary.main,
+    marginBottom: spacing.sm,
   },
   sportPillArrow: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -412,55 +416,51 @@ const styles = StyleSheet.create({
   reservationsLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing['2xl'],
   },
   reservationsLinkText: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: spacing.md,
     fontSize: 15,
+    fontFamily: textStyles.label.fontFamily,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.text.primary,
   },
   // Info Section
   infoSection: {
-    marginBottom: 20,
-  },
-  infoTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 12,
+    marginBottom: spacing.xl,
   },
   infoCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.sm + 2,
   },
   infoIconBg: {
     width: 48,
     height: 48,
-    borderRadius: 12,
+    borderRadius: borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   infoCardContent: {
     flex: 1,
   },
   infoCardTitle: {
     fontSize: 15,
+    fontFamily: textStyles.label.fontFamily,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.text.primary,
     marginBottom: 2,
   },
   infoCardText: {
-    fontSize: 13,
-    color: '#6B7280',
+    ...textStyles.caption,
+    color: colors.text.secondary,
   },
 });

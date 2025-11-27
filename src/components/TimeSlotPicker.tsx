@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { AvailableSlot, SlotStatus } from '../types';
 import { formatTime } from '../utils/dateHelpers';
+import { colors, spacing, borderRadius, textStyles } from '../theme';
+import haptics from '../utils/haptics';
 
 interface TimeSlotPickerProps {
   slots: AvailableSlot[];
@@ -15,13 +17,13 @@ interface TimeSlotPickerProps {
   onSelectSlot: (slot: AvailableSlot) => void;
 }
 
-// Fonction pour obtenir les styles selon le statut du créneau
+// Get slot status configuration
 function getSlotStatusConfig(status: SlotStatus, canOverride: boolean) {
   switch (status) {
     case 'free':
       return {
-        backgroundColor: '#F0FDF4',
-        borderColor: '#22C55E',
+        backgroundColor: colors.status.free.light,
+        borderColor: colors.status.free.main,
         textColor: '#166534',
         badgeColor: null,
         badgeText: null,
@@ -29,36 +31,36 @@ function getSlotStatusConfig(status: SlotStatus, canOverride: boolean) {
       };
     case 'unpaid':
       return {
-        backgroundColor: '#FFF7ED',
-        borderColor: '#F97316',
+        backgroundColor: colors.status.unpaid.light,
+        borderColor: colors.status.unpaid.main,
         textColor: '#9A3412',
-        badgeColor: '#F97316',
+        badgeColor: colors.status.unpaid.main,
         badgeText: 'Non payé',
         isSelectable: canOverride,
       };
     case 'paid':
       return {
-        backgroundColor: '#FEF2F2',
-        borderColor: '#EF4444',
+        backgroundColor: colors.status.paid.light,
+        borderColor: colors.status.paid.main,
         textColor: '#991B1B',
-        badgeColor: '#EF4444',
+        badgeColor: colors.status.paid.main,
         badgeText: 'Réservé',
         isSelectable: false,
       };
     case 'past':
       return {
-        backgroundColor: '#F3F4F6',
-        borderColor: '#D1D5DB',
-        textColor: '#9CA3AF',
+        backgroundColor: colors.status.past.light,
+        borderColor: colors.neutral[300],
+        textColor: colors.text.tertiary,
         badgeColor: null,
         badgeText: null,
         isSelectable: false,
       };
     default:
       return {
-        backgroundColor: '#F9FAFB',
-        borderColor: '#E5E7EB',
-        textColor: '#1F2937',
+        backgroundColor: colors.background.secondary,
+        borderColor: colors.border.default,
+        textColor: colors.text.primary,
         badgeColor: null,
         badgeText: null,
         isSelectable: true,
@@ -78,6 +80,11 @@ export default function TimeSlotPicker({
       </View>
     );
   }
+
+  const handleSlotPress = (slot: AvailableSlot) => {
+    haptics.selection();
+    onSelectSlot(slot);
+  };
 
   return (
     <View style={styles.container}>
@@ -99,19 +106,19 @@ export default function TimeSlotPicker({
               style={[
                 styles.slotButton,
                 {
-                  backgroundColor: isSelected ? '#F97316' : config.backgroundColor,
-                  borderColor: isSelected ? '#F97316' : config.borderColor,
+                  backgroundColor: isSelected ? colors.primary.main : config.backgroundColor,
+                  borderColor: isSelected ? colors.primary.main : config.borderColor,
                 },
                 isDisabled && styles.slotDisabled,
               ]}
-              onPress={() => onSelectSlot(slot)}
+              onPress={() => handleSlotPress(slot)}
               disabled={isDisabled}
               activeOpacity={0.7}
             >
               <Text
                 style={[
                   styles.slotTime,
-                  { color: isSelected ? '#FFFFFF' : config.textColor },
+                  { color: isSelected ? colors.neutral[0] : config.textColor },
                   isDisabled && styles.slotTimeDisabled,
                 ]}
               >
@@ -120,7 +127,7 @@ export default function TimeSlotPicker({
               <Text
                 style={[
                   styles.slotEndTime,
-                  { color: isSelected ? '#FED7AA' : config.textColor },
+                  { color: isSelected ? colors.primary.light : config.textColor },
                   isDisabled && styles.slotEndTimeDisabled,
                 ]}
               >
@@ -141,18 +148,18 @@ export default function TimeSlotPicker({
         })}
       </ScrollView>
 
-      {/* Légende */}
+      {/* Legend */}
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, styles.legendFree]} />
+          <View style={[styles.legendDot, { backgroundColor: colors.status.free.main }]} />
           <Text style={styles.legendText}>Libre</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, styles.legendUnpaid]} />
+          <View style={[styles.legendDot, { backgroundColor: colors.status.unpaid.main }]} />
           <Text style={styles.legendText}>Non payé</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, styles.legendPaid]} />
+          <View style={[styles.legendDot, { backgroundColor: colors.status.paid.main }]} />
           <Text style={styles.legendText}>Payé</Text>
         </View>
         <View style={styles.legendItem}>
@@ -161,7 +168,7 @@ export default function TimeSlotPicker({
         </View>
       </View>
 
-      {/* Info sur les créneaux non payés */}
+      {/* Info box */}
       <View style={styles.infoBox}>
         <Text style={styles.infoText}>
           Les créneaux orange sont réservés sans paiement. Vous pouvez les prendre en payant immédiatement.
@@ -173,26 +180,24 @@ export default function TimeSlotPicker({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 16,
+    marginVertical: spacing.lg,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 12,
+    ...textStyles.label,
+    marginBottom: spacing.md,
   },
   scrollContent: {
-    paddingVertical: 4,
-    gap: 10,
+    paddingVertical: spacing.xs,
+    gap: spacing.sm + 2,
   },
   slotButton: {
     width: 80,
     height: 80,
-    borderRadius: 12,
+    borderRadius: borderRadius.lg,
     borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: spacing.sm + 2,
     position: 'relative',
   },
   slotDisabled: {
@@ -200,29 +205,32 @@ const styles = StyleSheet.create({
   },
   slotTime: {
     fontSize: 16,
+    fontFamily: textStyles.label.fontFamily,
     fontWeight: '700',
   },
   slotTimeDisabled: {
-    color: '#9CA3AF',
+    color: colors.text.tertiary,
   },
   slotEndTime: {
     fontSize: 12,
+    fontFamily: textStyles.caption.fontFamily,
     marginTop: 2,
     opacity: 0.8,
   },
   slotEndTimeDisabled: {
-    color: '#D1D5DB',
+    color: colors.neutral[300],
   },
   statusBadge: {
     position: 'absolute',
     bottom: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: borderRadius.xs,
   },
   statusBadgeText: {
-    color: '#FFFFFF',
+    color: colors.neutral[0],
     fontSize: 7,
+    fontFamily: textStyles.overline.fontFamily,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
@@ -230,29 +238,30 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -6,
     right: -6,
-    backgroundColor: '#10B981',
+    backgroundColor: colors.success.main,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: borderRadius.sm,
   },
   overrideBadgeText: {
-    color: '#FFFFFF',
+    color: colors.neutral[0],
     fontSize: 8,
+    fontFamily: textStyles.overline.fontFamily,
     fontWeight: '700',
   },
   emptyContainer: {
-    padding: 24,
+    padding: spacing['2xl'],
     alignItems: 'center',
   },
   emptyText: {
-    color: '#9CA3AF',
-    fontSize: 14,
+    ...textStyles.bodySmall,
+    color: colors.text.tertiary,
   },
   legend: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 16,
-    gap: 12,
+    marginTop: spacing.lg,
+    gap: spacing.md,
     flexWrap: 'wrap',
   },
   legendItem: {
@@ -263,36 +272,29 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    marginRight: 4,
-  },
-  legendFree: {
-    backgroundColor: '#22C55E',
-  },
-  legendUnpaid: {
-    backgroundColor: '#F97316',
-  },
-  legendPaid: {
-    backgroundColor: '#EF4444',
+    marginRight: spacing.xs,
   },
   legendSelected: {
-    backgroundColor: '#F97316',
+    backgroundColor: colors.primary.main,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: colors.neutral[0],
   },
   legendText: {
     fontSize: 11,
-    color: '#6B7280',
+    fontFamily: textStyles.caption.fontFamily,
+    color: colors.text.secondary,
   },
   infoBox: {
-    marginTop: 12,
-    backgroundColor: '#FFF7ED',
-    borderRadius: 8,
-    padding: 10,
+    marginTop: spacing.md,
+    backgroundColor: colors.primary.light,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm + 2,
     borderLeftWidth: 3,
-    borderLeftColor: '#F97316',
+    borderLeftColor: colors.primary.main,
   },
   infoText: {
     fontSize: 12,
+    fontFamily: textStyles.caption.fontFamily,
     color: '#9A3412',
     lineHeight: 16,
   },

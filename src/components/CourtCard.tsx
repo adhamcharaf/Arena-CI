@@ -8,6 +8,8 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Court } from '../types';
 import { formatPrice } from '../utils/dateHelpers';
+import { colors, spacing, borderRadius, shadows, textStyles } from '../theme';
+import haptics from '../utils/haptics';
 
 interface CourtCardProps {
   court: Court;
@@ -20,27 +22,39 @@ const COURT_ICONS: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> 
 };
 
 export default function CourtCard({ court, onPress }: CourtCardProps) {
+  const isFootball = court.type === 'football';
+  const sportColors = isFootball ? colors.sport.football : colors.sport.padel;
+
+  const handlePress = () => {
+    haptics.light();
+    onPress();
+  };
+
   return (
     <TouchableOpacity
       style={styles.container}
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.8}
     >
-      {/* Image placeholder */}
+      {/* Image placeholder with sport icon */}
       <View style={styles.imageContainer}>
-        <View style={[styles.placeholder, court.type === 'football' ? styles.footballBg : styles.padelBg]}>
-          <MaterialCommunityIcons name={COURT_ICONS[court.type]} size={48} color="#FFFFFF" />
+        <View style={[styles.placeholder, { backgroundColor: sportColors.dark }]}>
+          <MaterialCommunityIcons
+            name={COURT_ICONS[court.type]}
+            size={48}
+            color={colors.neutral[0]}
+          />
         </View>
 
-        {/* Badge type */}
-        <View style={[styles.typeBadge, court.type === 'football' ? styles.footballBadge : styles.padelBadge]}>
+        {/* Sport type badge */}
+        <View style={[styles.typeBadge, { backgroundColor: sportColors.main }]}>
           <Text style={styles.typeText}>
-            {court.type === 'football' ? 'Football' : 'Padel'}
+            {isFootball ? 'Football' : 'Padel'}
           </Text>
         </View>
       </View>
 
-      {/* Contenu */}
+      {/* Content */}
       <View style={styles.content}>
         <Text style={styles.name}>{court.name}</Text>
 
@@ -67,15 +81,11 @@ export default function CourtCard({ court, onPress }: CourtCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius.card,
     overflow: 'hidden',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    marginBottom: spacing.lg,
+    ...shadows.card,
   },
   imageContainer: {
     height: 160,
@@ -87,44 +97,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  footballBg: {
-    backgroundColor: '#065F46',
-  },
-  padelBg: {
-    backgroundColor: '#1E40AF',
-  },
   typeBadge: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  footballBadge: {
-    backgroundColor: '#10B981',
-  },
-  padelBadge: {
-    backgroundColor: '#3B82F6',
+    top: spacing.md,
+    left: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: borderRadius.full,
   },
   typeText: {
-    color: '#FFFFFF',
+    color: colors.neutral[0],
     fontSize: 12,
+    fontFamily: textStyles.label.fontFamily,
     fontWeight: '700',
   },
   content: {
-    padding: 16,
+    padding: spacing.lg,
   },
   name: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
+    ...textStyles.h4,
+    marginBottom: spacing.xs,
   },
   description: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 12,
+    ...textStyles.bodySmall,
+    marginBottom: spacing.md,
     lineHeight: 20,
   },
   footer: {
@@ -138,23 +134,25 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 20,
+    fontFamily: textStyles.h3.fontFamily,
     fontWeight: '800',
-    color: '#F97316',
+    color: colors.primary.main,
   },
   duration: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginLeft: 4,
+    ...textStyles.bodySmall,
+    color: colors.text.tertiary,
+    marginLeft: spacing.xs,
   },
   bookButton: {
-    backgroundColor: '#F97316',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
+    backgroundColor: colors.primary.main,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: borderRadius.button - 2,
   },
   bookButtonText: {
-    color: '#FFFFFF',
+    color: colors.neutral[0],
     fontSize: 14,
+    fontFamily: textStyles.button.fontFamily,
     fontWeight: '700',
   },
 });

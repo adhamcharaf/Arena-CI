@@ -9,15 +9,18 @@ import {
   Platform,
   ScrollView,
   Linking,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import PhoneInput from '../components/PhoneInput';
 import { useAuthStore } from '../stores/authStore';
 import { validatePhoneCI } from '../utils/phoneValidator';
+import { colors, spacing, borderRadius, shadows, textStyles } from '../theme';
+import haptics from '../utils/haptics';
 
-// Numéro de contact pour les réservations (à remplacer par le vrai numéro)
+// Numéro de contact pour les réservations
 const CONTACT_PHONE = '+22507000000';
 
 type LoginScreenProps = {
@@ -34,17 +37,23 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     // Valider le numéro
     const validation = validatePhoneCI(phone);
     if (!validation.valid) {
+      haptics.error();
       return;
     }
 
+    haptics.light();
     const result = await sendVerificationCode(phone);
 
     if (result.success) {
+      haptics.success();
       navigation.navigate('VerifyCode', { phone });
+    } else {
+      haptics.error();
     }
   };
 
   const handleCallSupport = () => {
+    haptics.light();
     Linking.openURL(`tel:${CONTACT_PHONE}`);
   };
 
@@ -60,13 +69,13 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
+          {/* Header with Arena Logo */}
           <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <MaterialCommunityIcons name="stadium-variant" size={48} color="#FFFFFF" />
-            </View>
-            <Text style={styles.title}>Arena</Text>
-            <Text style={styles.subtitle}>Grand-Bassam</Text>
+            <Image
+              source={require('../../assets/Arena-Icon.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
           </View>
 
           {/* Description */}
@@ -94,7 +103,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               activeOpacity={0.8}
             >
               {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={colors.neutral[0]} />
               ) : (
                 <Text style={styles.submitButtonText}>Recevoir le code SMS</Text>
               )}
@@ -104,8 +113,17 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           {/* Contact support */}
           <View style={styles.supportContainer}>
             <Text style={styles.supportText}>Un problème pour réserver ?</Text>
-            <TouchableOpacity onPress={handleCallSupport} activeOpacity={0.7} style={styles.supportLinkContainer}>
-              <Ionicons name="call" size={16} color="#F97316" style={styles.supportIcon} />
+            <TouchableOpacity
+              onPress={handleCallSupport}
+              activeOpacity={0.7}
+              style={styles.supportLinkContainer}
+            >
+              <Ionicons
+                name="call"
+                size={16}
+                color={colors.primary.main}
+                style={styles.supportIcon}
+              />
               <Text style={styles.supportLink}>Appelez-nous directement</Text>
             </TouchableOpacity>
           </View>
@@ -126,106 +144,88 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background.primary,
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 24,
+    padding: spacing['2xl'],
     justifyContent: 'center',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: spacing['3xl'],
   },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#F97316',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#1F2937',
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#F97316',
-    fontWeight: '600',
-    marginTop: 4,
+  logo: {
+    width: 260,
+    height: 100,
   },
   description: {
-    fontSize: 16,
-    color: '#6B7280',
+    ...textStyles.body,
+    color: colors.text.secondary,
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: spacing['4xl'],
     lineHeight: 24,
   },
   form: {
-    marginBottom: 32,
+    marginBottom: spacing['3xl'],
   },
   submitButton: {
-    backgroundColor: '#F97316',
-    borderRadius: 12,
+    backgroundColor: colors.primary.main,
+    borderRadius: borderRadius.button,
     height: 56,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
-    shadowColor: '#F97316',
+    marginTop: spacing['2xl'],
+    shadowColor: colors.primary.main,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   submitButtonDisabled: {
-    backgroundColor: '#D1D5DB',
+    backgroundColor: colors.neutral[300],
     shadowOpacity: 0,
   },
   submitButtonText: {
-    color: '#FFFFFF',
+    ...textStyles.button,
     fontSize: 18,
-    fontWeight: '700',
   },
   supportContainer: {
     alignItems: 'center',
-    marginBottom: 24,
-    paddingVertical: 16,
+    marginBottom: spacing['2xl'],
+    paddingVertical: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: colors.border.default,
   },
   supportText: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 8,
+    ...textStyles.bodySmall,
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
   },
   supportLinkContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   supportIcon: {
-    marginRight: 6,
+    marginRight: spacing.xs + 2,
   },
   supportLink: {
-    fontSize: 16,
-    color: '#F97316',
-    fontWeight: '600',
+    ...textStyles.label,
+    color: colors.primary.main,
   },
   footer: {
     alignItems: 'center',
   },
   footerText: {
-    fontSize: 13,
-    color: '#9CA3AF',
+    ...textStyles.caption,
+    color: colors.text.tertiary,
     textAlign: 'center',
   },
   footerLink: {
-    color: '#F97316',
+    color: colors.primary.main,
     fontWeight: '600',
   },
 });
