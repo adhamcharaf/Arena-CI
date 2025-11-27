@@ -677,6 +677,7 @@ npx tsc --noEmit        # Verifier types TypeScript
 | 2025-11-27 | UX paiement amelioree: confirmation avant credit, scroll modal corrige | - |
 | 2025-11-27 | Refonte page accueil: activites, espace detente, galerie, formulaire evenements, contact | - |
 | 2025-11-27 | Simplifier BookingsScreen (supprimer boutons reservation), renommer onglet "Mes reservations" | - |
+| 2025-11-27 | Fix bug paiement credit partiel + mobile money (onMobileMethodSelect jamais appele) | - |
 
 ---
 
